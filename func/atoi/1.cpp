@@ -10,16 +10,6 @@
 using namespace std;
 using std::string;
 
-int power(int num, int co)
-{
-	int ret = num;
-	while(co--)
-	{ 
-		ret *= 10; 
-	}
-	return ret;
-}
-
 //int 最大值：2147483647‬ 最小值：-2147483648
 int atoi(string str)
 {
@@ -27,7 +17,7 @@ int atoi(string str)
 	int str_len = str.length();
 	int int_len = 11;
 	int i;
-	cout<<str_len<<endl;
+
 	//符号判断
 	if(str_len<0 || int_len < str_len)
 		return 0;
@@ -37,11 +27,12 @@ int atoi(string str)
 	{
 		i++;
 	}
+	ret = 0;
 	while(i < str_len)
 	{
 		if(str[i] < '9' && str[i] > '0')
 		{
-			ret += power((str[i]-0x30), str_len-i-1);
+			ret = ret*10 + str[i]-0x30;
 		}
 		i++;
 	}
