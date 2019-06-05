@@ -2,8 +2,10 @@
 C++ study rep
 
 
-base
-  bigEndandSmallEnd:理解大端序和小端序的区别
+question:
+  1 什么是虚函数？
+  2 多态是怎么样的？
+  3 动态联编
   
   
   
