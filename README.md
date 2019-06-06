@@ -2,12 +2,12 @@
 C++ study rep
 
 
-##question:
+## question:
 * 什么是虚函数？
 * 多态是怎么样的？
 * 动态联编
 
-##C++ STL
+## C++ STL
 * 容器(containers)
 * 迭代器(iterators)
 * 空间配置器(allocator)
@@ -15,12 +15,12 @@ C++ study rep
 * 算法(algorithms)
 * 仿函数(functors)
   
-##DataStruct
+## DataStruct
 * 链表
 * 树
 * 队列
 
-##Algorithm
+## Algorithm
 * 贪婪法
 * 分治法
 * 穷举法
