@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdlib.h>
 #include "list.h"
 
 using namespace std;
@@ -57,7 +58,7 @@ void List::delt(int iVal)
 			del = p;
 			p = p->next;
 		}
-	}
+    }
 }
 
 void List::deltAll()
@@ -88,6 +89,39 @@ void List::printList(int start, int end)
 		p = p->next;
 	}
 	cout<<endl;
+}
+
+void List::generateRandList(int len, struct node *ihead)
+{
+    if(len <= 0)
+      return ;//  return NULL;
+    
+    struct node *p;
+    unsigned int index = 0;
+    int iRandval;
+
+    p = new struct node(0); // head
+    if(p == NULL)
+    {
+        cout<<"new node error!!!"<<endl;
+        exit(0);
+    }
+    List::head = p;
+    p->index = index;
+
+
+    while(len--)
+    {
+    /*generate rand value*/
+        iRandval = rand()%11;
+        
+        p->next = new struct node(iRandval);
+        p->next->index = ++index;
+        p = p->next;
+    }
+
+    //return ihead;
+
 }
 
 #if 0

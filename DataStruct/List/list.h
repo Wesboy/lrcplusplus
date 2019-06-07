@@ -25,7 +25,9 @@ public:
 	void deltAll();
 	/*打印链表*/
 	void printList(int start, int end);
-	
+
+    /*生成随机链表*/
+    void generateRandList(int len, struct node *ihead);
 };
 
 

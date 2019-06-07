@@ -5,21 +5,10 @@ using namespace std;
 
 int main()
 {
-	List lt;
-	
-	lt.insert(4);
-	lt.insert(45);
-	lt.insert(45);
-	lt.insert(3);
-	lt.insert(5);
-	lt.insert(6);
-	lt.insert(47);
-	lt.insert(48);
-	lt.insert(23);
-	lt.insert(43);
-	lt.printList(0,0);	
+    List lt;
 
-	lt.delt(45);
+    lt.generateRandList(100, lt.head); 
+
 	lt.printList(0,0);	
 
 
