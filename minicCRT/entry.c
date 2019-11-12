@@ -68,12 +68,6 @@ void mini_crt_entry(void)
 }
 
 
-//io init
-void mini_crt_io_init()
-{
-
-}
-
 void exit(int exitcode)
 {
     #ifdef WIN32
