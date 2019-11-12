@@ -17,7 +17,7 @@ int fputs(const char *str, FILE *stream)
         return EOF;
     else
     {
-        return l;
+        return 1;
     }
     
 }

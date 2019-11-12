@@ -78,7 +78,7 @@ static int open(const char *pathname, int flags, int mode)
         "movl %2,%%ecx\n\t"
         "movl %3,%%edx\n\t"
         "int $0x80\n\t"
-        "movl %%eax, %0\n\t"
+        "movl %%eax, %0\n\t":
         "=m"(fd):"m"(pathname),"m"(flags),"m"(mode)
     );
 }
@@ -92,12 +92,12 @@ static int read(int fd, void *buf, unsigned size)
         "movl %2,%%ecx\n\t"
         "movl %3,%%edx\n\t"
         "int $0x80\n\t"
-        "movl %%eax, %0\n\t"
+        "movl %%eax, %0\n\t":
         "=m"(ret): "m"(fd), "m"(buf), "m"(size));
     return ret;
 }
 
-static int write(int fd, void *buf, unsigned size)
+static int write(int fd, const void *buf, unsigned size)
 {
     int ret = 0;
     asm(
@@ -106,7 +106,7 @@ static int write(int fd, void *buf, unsigned size)
         "movl %2,%%ecx\n\t"
         "movl %3,%%edx\n\t"
         "int $0x80\n\t"
-        "movl %%eax, %0\n\t"
+        "movl %%eax, %0\n\t":
         "=m"(ret): "m"(fd), "m"(buf), "m"(size));
     return ret;
 }
@@ -118,7 +118,7 @@ static int close(int fd)
         "movl $6,%%eax\n\t"
         "movl %1,%%ebx\n\t"
         "int $0x80\n\t"
-        "movl %%eax, %0\n\t"
+        "movl %%eax, %0\n\t":
         "=m"(ret) : "m"(fd)
     );
     return ret;
@@ -133,7 +133,7 @@ static int seek(int fd, int offset, int mode)
         "movl %2,%%ecx\n\t"
         "movl %3,%%edx\n\t"
         "int $0x80\n\t"
-        "movl %%eax, %0\n\t"
+        "movl %%eax, %0\n\t":
         "=m"(ret): "m"(fd), "m"(offset), "m"(mode));
     return ret;
 }

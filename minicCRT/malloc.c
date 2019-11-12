@@ -27,6 +27,7 @@ static int brk(void* end_data_segment)
         "movl %%eax, %0 \n\t"
         : "=r"(ret): "m"(end_data_segment)
     );
+    return ret;
 }
 #endif
 
@@ -52,7 +53,7 @@ void *malloc(unsigned size)
         }
         if(header->size > size + header_size*2)
         {
-            heap_header *next = (header_size *)ADDR_ADD(header, size+header_size);
+            heap_header *next = (heap_header *)ADDR_ADD(header, size + header_size);
             next->prev = header;
             next->next = header->next;
             next->type = HEAP_BLOCK_FREE;
@@ -93,8 +94,8 @@ void free(void *ptr)
     }
 }
 
-#ifndef WIN32
-#include <windows.h>
+#ifdef WIN32
+#include <Windows.h>
 #endif
 
 //heap init
