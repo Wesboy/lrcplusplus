@@ -62,7 +62,7 @@ int vfprintf(FILE *stream, const char *format, va_list arglist)
                         return EOF;
                     ret += strlen(buf);
                 }
-                else if(fput('d', stream) < 0)
+                else if(fputc('d', stream) < 0)
                 {
                     return EOF;
                 }

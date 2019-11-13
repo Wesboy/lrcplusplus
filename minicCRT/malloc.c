@@ -21,13 +21,13 @@ static int brk(void* end_data_segment)
 {
     int ret = 0;
     asm(
-        "movl $45, %%eax\n\t"
+        "movl $214, %%eax\n\t"
         "movl %1, %%ebx\n\t"
         "int $0x80 \n\t"
         "movl %%eax, %0 \n\t"
         : "=r"(ret): "m"(end_data_segment)
     );
-    return ret;
+    //return ret;0x08048406 in mini_crt_heap_init ()
 }
 #endif
 
@@ -111,16 +111,16 @@ int mini_crt_heap_init(void)
     if(NULL == base)
         return 0;
 #else
-    base = (void*)brk(0);
+    base = (void *)brk(0);
     void *end=ADDR_ADD(base , heap_size);
-    end = (void*)brk(end);
+    end = (void *)brk(end);
     if(!end)
         return 0;
 #endif
 
     header = (heap_header *)base;
 
-    header->size = header_size;
+    header->size = heap_size;
     header->type = HEAP_BLOCK_FREE;
     header->next = NULL;
     header->prev = NULL;
