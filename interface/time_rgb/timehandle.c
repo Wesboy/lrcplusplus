@@ -1,0 +1,103 @@
+#include "timehandle.h"
+#include "matrixRGB.h"
+#include "string.h"
+
+
+static uint8_t Matrix_5_7_Num[10][8] = {
+		0x00, 0x0f, 0x09, 0x09, 0x09, 0x09, 0x09, 0x0f, /*0*/
+		0x00, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, /*1*/
+		0x00, 0x0f, 0x01, 0x01, 0x0f, 0x08, 0x08, 0x0f, /*2*/
+		0x00, 0x0f, 0x01, 0x01, 0x0f, 0x01, 0x01, 0x0f, /*3*/
+		0x00, 0x09, 0x09, 0x09, 0x0f, 0x01, 0x01, 0x01, /*4*/
+		0x00, 0x0f, 0x08, 0x08, 0x0f, 0x01, 0x01, 0x0f, /*5*/
+		0x00, 0x0f, 0x08, 0x08, 0x0f, 0x09, 0x09 ,0x0f, /*6*/
+		0x00, 0x0f, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, /*7*/
+		0x00, 0x0f, 0x09, 0x09, 0x0f, 0x09, 0x09, 0x0f, /*8*/
+		0x00, 0x0f, 0x09, 0x09, 0x0f, 0x01, 0x01, 0x0f, /*9*/
+};
+static uint8_t Matrix_3_5_Num[10][5] = {
+		0x07, 0x05, 0x05, 0x05, 0x07, /*0*/
+		0x02, 0x02, 0x02, 0x02, 0x02, /*1*/
+		0x07, 0x01, 0x07, 0x04, 0x07, /*2*/
+		0x07, 0x01, 0x07, 0x01, 0x07, /*3*/
+		0x05, 0x05, 0x07, 0x01, 0x01, /*4*/
+		0x07, 0x04, 0x07, 0x01, 0x07, /*5*/
+		0x07, 0x04, 0x07, 0x05, 0x07, /*6*/
+		0x07, 0x01, 0x01, 0x01, 0x01, /*7*/
+		0x07, 0x05, 0x07, 0x05, 0x07, /*8*/
+		0x07, 0x05, 0x07, 0x01, 0x07, /*9*/
+};
+
+
+static wTime mTime;
+
+
+
+void timeInit(void)
+{
+    memset(&mTime, 0, sizeof(wTime));
+}
+
+
+void timeHandle(void)
+{
+    uint8_t i, line = 0;
+    uint32_t lineval = 0;
+
+    //显示时间
+    for(line = 0; line < 8; line++)
+    {
+        lineval = 0;
+        lineval = Matrix_5_7_Num[mTime.hour/10][7-line]<<27;
+        lineval |= Matrix_5_7_Num[mTime.hour%10][7-line]<<22;
+        lineval |= Matrix_5_7_Num[mTime.minute/10][7-line]<<14;
+        lineval |= Matrix_5_7_Num[mTime.minute%10][7-line]<<9;
+
+        if(line == 1 || line == 2 || line == 4 || line == 5)
+        {
+            lineval |= 0x180000;
+        }
+        if(line < 5)
+        {
+            lineval |= Matrix_3_5_Num[mTime.second/10][4 - line] << 5;
+            lineval |= Matrix_3_5_Num[mTime.second%10][4 - line] << 1;
+        }
+        
+        for(i = 0; i < 32; i++)
+        {
+            if((lineval >> i) &0x1)
+                setRGB(line,i, 0xFF0000, 200);
+            else
+            {
+                setRGB(line,i, 0x0, 200);
+            }
+        }
+    }
+    
+    flushRGB();
+
+    if(mTime.second >= 59)
+    {
+        mTime.second = 0;
+        if(mTime.minute >= 59)
+        {
+            mTime.minute = 0;
+            if(mTime.hour >= 23)
+            {
+                mTime.hour = 0;
+            }
+            else
+            {
+                mTime.hour++;
+            }
+        }
+        else
+        {
+            mTime.minute++;
+        }
+    }
+    else
+    {
+        mTime.second++;
+    }
+}
