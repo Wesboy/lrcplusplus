@@ -26,8 +26,8 @@ Output: [1]
 - The number of nodes in the tree is in the range [0, 100].
 - -100 <= Node.val <= 100
 
-
-## My First Ans
+## 解法
+### 二叉树的前序遍历解法
 
 - 采用递归的方式
 
@@ -180,3 +180,187 @@ int* preorderTraversal(struct TreeNode* root, int* returnSize){
 
 }
 ```
+
+### 二叉树的中序遍历解法
+
+中序遍历主要记住的点是 排序为左节点->根节点->右节点
+
+#### 递归 
+```
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+
+void searchTreeVal(struct TreeNode* p, int *dat, int *index)
+{
+    if(p != NULL)
+    {
+        searchTreeVal(p->left, dat, index);
+        dat[(*index)++] = p->val;
+		searchTreeVal(p->right, dat, index);
+    }
+}
+
+
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* inorderTraversal(struct TreeNode* root, int* returnSize){
+    int *result = NULL;
+    *returnSize = 0;
+    if(root == NULL)
+        return result;
+
+    struct TreeNode *p = root;
+
+    result = (int *)malloc(100*sizeof(int));
+    if(result)
+    {
+        p = root;
+        searchTreeVal(p, result, returnSize);
+    }
+
+    return result;
+}
+```
+
+#### 迭代
+
+```
+
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* inorderTraversal(struct TreeNode* root, int* returnSize){
+    int *result = NULL;
+    *returnSize = 0;
+    if(root == NULL)
+        return result;
+
+    struct TreeNode *p = root;
+
+    result = (int *)malloc(100*sizeof(int));
+    struct TreeNode *stackNode[100]; //栈 
+    int top = -1; //栈顶
+
+    if(result)
+    {
+        p = root;
+        while(top > -1 || p!= NULL)
+        {
+            while(p != NULL)
+            {
+                stackNode[++top] = p;
+                p = p->left;
+            }
+            p = stackNode[top--];
+            result[(*returnSize)++] = p->val;
+            p = p->right;
+        }
+    }
+
+    return result;
+}
+```
+
+
+### 二叉树的后序遍历解法
+
+
+中序遍历主要记住的点是 排序为左节点->右节点->根节点
+
+#### 递归 
+```
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+
+void searchTreeVal(struct TreeNode* p, int *dat, int *index)
+{
+    if(p != NULL)
+    {
+        searchTreeVal(p->left, dat, index);
+		searchTreeVal(p->right, dat, index);
+        dat[(*index)++] = p->val;
+    }
+}
+
+
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* postorderTraversal(struct TreeNode* root, int* returnSize){
+    int *result = NULL;
+    *returnSize = 0;
+    if(root == NULL)
+        return result;
+
+    struct TreeNode *p = root;
+
+    result = (int *)malloc(100*sizeof(int));
+    if(result)
+    {
+        p = root;
+        searchTreeVal(p, result, returnSize);
+    }
+
+    return result;
+}
+```
+
+#### 迭代
+
+```
+
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+int* postorderTraversal(struct TreeNode* root, int* returnSize){
+    int *result = NULL;
+    *returnSize = 0;
+    if(root == NULL)
+        return result;
+
+    struct TreeNode *p = root, *pre = NULL;
+
+    result = (int *)malloc(100*sizeof(int));
+    struct TreeNode *stackNode[100]; //栈 
+    int top = -1; //栈顶
+
+    if(result)
+    {
+        p = root;
+        while(top > -1 || p!= NULL)
+        {
+            while(p != NULL)
+            {
+                stackNode[++top] = p;
+                p = p->left;
+            }
+            p = stackNode[top];
+            p = p->right;
+
+            if(p == NULL || p == pre)
+            {
+                pre = stackNode[top--];
+                result[(*returnSize)++] = pre->val;
+                p = NULL;
+            }
+        }
+    }
+
+    return result;
+}
+```
+
+
