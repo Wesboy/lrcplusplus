@@ -2,7 +2,7 @@
  * @Author: flywes bg_weapon@163.com
  * @Date: 2024-04-12 14:58:06
  * @LastEditors: flywes bg_weapon@163.com
- * @LastEditTime: 2024-04-15 11:13:54
+ * @LastEditTime: 2024-04-15 13:44:20
  * @FilePath: \TinyWebServer\client.c
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -13,8 +13,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#define SERVER_IP "192.168.79.1"
-#define SERVER_PORT 80
+#define SERVER_IP "192.168.79.128"
+#define SERVER_PORT 8887
 
 int main() {
     // 创建socket
@@ -38,7 +38,7 @@ int main() {
     }
 
     // 构造HTTP请求
-    char *request = "\reSee";
+    char *request = "eSee";
 
     // 发送请求
     if (send(client_socket, request, strlen(request), 0) == -1) {
@@ -46,13 +46,14 @@ int main() {
         close(client_socket);
         return EXIT_FAILURE;
     }
+    printf("send ok:\n" );
 
     // 接收响应
     char buffer[1024];
     int bytes_received;
     while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0) {
-        // 打印响应
-        fwrite(buffer, 1, bytes_received, stdout);
+                    /*对接收到的数据进行处理*/
+        printf("(%d)========recv : %s\n", bytes_received, buffer );
     }
     if (bytes_received == -1) {
         perror("Receive failed");

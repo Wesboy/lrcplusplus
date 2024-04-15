@@ -9,8 +9,13 @@
 #include <stdlib.h>
 #include <signal.h>
 
+
+#include <time.h>
+#include <pthread.h>
+
 #define MAX_EVENTS  1024 //最多可以等待多少个事件
 #define SERVER_PORT 8887
+static char curTime[20];
 
 // 定义客户端列表结构
 typedef struct {
@@ -27,7 +32,21 @@ static int server = 0;
 static int epollInstance = 0;
 
 
+// // 在 main 函数中调用 getcurrenttime 并打印当前时间
+static char currentTime[20]; // 确保 buffer 大小足够存储时间字符串
+// getcurrenttime(currentTime, sizeof(currentTime));
+// printf("Current time: %s\n", currentTime);
 
+// 获取当前时间并格式化为 "YYYY-MM-DD HH:MM:SS" 格式
+void getcurrenttime(char *buffer, size_t size) {
+    time_t now = time(NULL);
+    sprintf(curTime, "%ld", now);
+    struct tm *tm_info = localtime(&now);
+    strftime(buffer, size, "%Y-%m-%d %H:%M:%S", tm_info);
+}
+
+
+void send_file_to_client(int client_fd, const char *filename) ;
 
 // 声明信号处理函数
 void signal_handler(int signum);
@@ -41,7 +60,8 @@ void signal_handler(int signum)
         printf("Caught SIGINT, cleaning up...\n");
         
         // 关闭服务器socket
-        close(epollInstance); // 注意：这里应该是关闭客户端的socket，而不是epoll实例
+        close(
+            epollInstance); // 注意：这里应该是关闭客户端的socket，而不是epoll实例
         close(server);
         
         // 取消绑定（如果有必要）
@@ -53,6 +73,23 @@ void signal_handler(int signum)
         // 退出程序
         exit(0);
     }
+}
+
+
+//创建一个线程任务
+void *thread_task(void *arg) {
+    if(arg == NULL)
+        return NULL;
+    int curId = *(int *)arg;
+
+    getcurrenttime(currentTime, sizeof(currentTime));
+    printf("thread_task time: %s.%d\n", currentTime, curTime);
+
+    send_file_to_client(curId, "/home/cwp/mywork/lrcplusplus/linux/network/ddns2_demo/server/test/00_small_1.jpg");
+    getcurrenttime(currentTime, sizeof(currentTime));
+    printf("thread_task time: %s.%d\n", currentTime, curTime);
+
+    return NULL;
 }
 
 // 向特定客户端发送消息的函数
@@ -70,6 +107,16 @@ int send_to_client(int client_fd, const char *message) {
     }
     return -1; // 未找到客户端
 }
+
+// 新连接处理函数，这里简单打印连接信息，实际应用中可能包含更多复杂的业务逻辑
+void handle_new_connection(int client_sock, struct sockaddr_in* client_addr) {
+    printf("+++New connection from %s:%d\n",
+           inet_ntoa(client_addr->sin_addr),
+           ntohs(client_addr->sin_port));
+    // 实际应用中在此处读取客户端数据并进行处理
+}
+
+
 
 int main()
 {
@@ -148,9 +195,9 @@ int main()
                 /*有客户端连接上来了*/
                 asize = sizeof(caddr);  
                 client = accept(server, (struct sockaddr*)&caddr, &asize);
-                printf("client is connect\n");
+                // printf("client is connect\n");
                         // 打印客户端的IP地址和端口
-                printf("Client connected. IP: %s, Port: %d\n", inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
+                // printf("Client connected. IP: %s, Port: %d\n", inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
 
                 event.events = EPOLLIN | EPOLLET;
                 event.data.fd = client;
@@ -159,10 +206,14 @@ int main()
                 {
                     printf("Failed to add client socket to epoll instance");
                     return -1;
-                }                
+                }
+            
+                // 调用回调函数处理新连接
+                handle_new_connection(client, &caddr);                
             }
             else
             {
+                memset(buf, 0, sizeof(buf));
                 /*处理客户端的请求*/
                 len = read(events[i].data.fd, buf, 1024);
                 if(len == 0)
@@ -178,9 +229,13 @@ int main()
                 }
                 else
                 {
-                    /*对接收到的数据进行处理*/
                     printf("(%d)========recv : %s\n", len, buf);
-                    write(events[i].data.fd, buf, len);
+                    
+                    send(events[i].data.fd, buf, len, 0);
+                    //创建线程
+                    pthread_t thread;
+                    pthread_create(&thread, NULL, thread_task, &events[i].data.fd);
+
                 }
             }
         }        
@@ -194,4 +249,24 @@ int main()
     return 0;
 }
 
+
+//发送文件给客户端
+void send_file_to_client(int client_fd, const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        perror("fopen");
+        return;
+    }
+
+    char buf[1024];
+    int len;
+    while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
+        if (send(client_fd, buf, len, 0) == -1) {
+            perror("send");
+            break;
+        }
+    }
+
+    fclose(fp);
+}
 

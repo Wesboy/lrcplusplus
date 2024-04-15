@@ -20,7 +20,7 @@ all: server client
 
 # 编译服务器程序
 server: $(SERVER_SRC)
-	$(CC) $(CFLAGS) -o $(SERVER_EXEC) $(SERVER_SRC)
+	$(CC) $(CFLAGS) -o $(SERVER_EXEC) $(SERVER_SRC) -lpthread
 
 # 编译客户端程序
 client: $(CLIENT_SRC)
