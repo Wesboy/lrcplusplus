@@ -2,6 +2,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 
+CC_ARM = /home/cwp/mywork/rk3399Linux/prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc
+
 # 定义根目录和子目录
 ROOT_DIR := .
 SERVER_DIR := server
@@ -17,6 +19,11 @@ CLIENT_SRC := $(wildcard $(CLIENT_DIR)/*.c)
 
 # 默认目标是全部编译
 all: server client
+
+
+# 编译服务器程序
+server_arm: $(SERVER_SRC)
+	$(CC_ARM) $(CFLAGS) -o $(SERVER_EXEC) $(SERVER_SRC) -lpthread
 
 # 编译服务器程序
 server: $(SERVER_SRC)

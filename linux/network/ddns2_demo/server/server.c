@@ -45,6 +45,18 @@ void getcurrenttime(char *buffer, size_t size) {
     strftime(buffer, size, "%Y-%m-%d %H:%M:%S", tm_info);
 }
 
+long long printTime()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    long long timestamp = (ts.tv_sec * 1000000000LL) + ts.tv_nsec;
+    timestamp /= 1000000; // 转换为毫秒
+
+    // printf("Current timestamp in milliseconds: %lld\n", timestamp);
+    return timestamp;
+}
+
 
 void send_file_to_client(int client_fd, const char *filename) ;
 
@@ -59,9 +71,17 @@ void signal_handler(int signum)
     if (signum == SIGINT) {
         printf("Caught SIGINT, cleaning up...\n");
         
+
+        for (int i = 0; i < num_clients; i++) {
+            if(clients[i].fd != -1)
+            {
+                printf("client:%d close\n", i);
+                close(clients[i].fd);
+            }
+        }
+
         // 关闭服务器socket
-        close(
-            epollInstance); // 注意：这里应该是关闭客户端的socket，而不是epoll实例
+        close(epollInstance); // 注意：这里应该是关闭客户端的socket，而不是epoll实例
         close(server);
         
         // 取消绑定（如果有必要）
@@ -81,13 +101,16 @@ void *thread_task(void *arg) {
     if(arg == NULL)
         return NULL;
     int curId = *(int *)arg;
+    long long curTime = printTime();
+    long long endTime;
 
-    getcurrenttime(currentTime, sizeof(currentTime));
-    printf("thread_task time: %s.%d\n", currentTime, curTime);
-
-    send_file_to_client(curId, "/home/cwp/mywork/lrcplusplus/linux/network/ddns2_demo/server/test/00_small_1.jpg");
-    getcurrenttime(currentTime, sizeof(currentTime));
-    printf("thread_task time: %s.%d\n", currentTime, curTime);
+    // getcurrenttime(currentTime, sizeof(currentTime));
+    // printf("thread_task time: %s.%d\n", currentTime, curTime);
+    // send_file_to_client(curId, "test/00_small_1.jpg");
+    send_file_to_client(curId, "test/big_bmp_1.bmp");
+    endTime = printTime();
+    // getcurrenttime(currentTime, sizeof(currentTime));
+    printf("client:%d thread_task startTime:%ld end:%ld cast: %ldms\n", curId,curTime, endTime, endTime - curTime);
 
     return NULL;
 }
@@ -108,14 +131,108 @@ int send_to_client(int client_fd, const char *message) {
     return -1; // 未找到客户端
 }
 
-// 新连接处理函数，这里简单打印连接信息，实际应用中可能包含更多复杂的业务逻辑
-void handle_new_connection(int client_sock, struct sockaddr_in* client_addr) {
-    printf("+++New connection from %s:%d\n",
-           inet_ntoa(client_addr->sin_addr),
-           ntohs(client_addr->sin_port));
-    // 实际应用中在此处读取客户端数据并进行处理
+
+// 向特定客户端发送消息的函数
+int send_to_all_client(const char *message) {
+    for (int i = 0; i < num_clients; i++) {
+        // 找到客户端，发送消息
+        int len = strlen(message);
+        if (send(clients[i].fd, message, len, 0) == -1) {
+            perror("send");
+            return -1; // 发送失败
+        }
+    }
+    return 0; // 未找到客户端
 }
 
+
+// 向特定客户端发送消息的函数
+int send_to_file() {
+    for (int i = 0; i < num_clients; i++) {
+        //创建thread_task线程
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, thread_task, &clients[i].fd);
+    }
+    return 0; // 未找到客户端
+}
+
+// 新连接处理函数，这里简单打印连接信息，实际应用中可能包含更多复杂的业务逻辑
+void handle_new_connection(int client_sock, struct sockaddr_in* client_addr) {
+    // 实际应用中在此处读取客户端数据并进行处理
+    if(num_clients < MAX_EVENTS)
+    {
+        clients[num_clients].fd = client_sock;
+        clients[num_clients].addr = *client_addr;
+        num_clients++;
+    }
+    printf("[%d]+++New connection from %s:%d\n", num_clients,
+           inet_ntoa(client_addr->sin_addr),
+           ntohs(client_addr->sin_port));
+}
+
+
+// 创建控制台读取线程
+static void consoleReadThread(void *arg)
+{
+    char *input = NULL;
+    size_t inputSize = 0;
+    ssize_t bytesRead;
+    printf("Enter hexadecimal data (e.g., FF FE 33 FF 44 99). Enter 'Q' to quit.\n");
+
+    while (1) {
+        printf("[PID:%d]> ",getpid());
+
+        // 从标准输入读取一行数据
+        bytesRead = getline(&input, &inputSize, stdin);
+
+        if (bytesRead == -1) {
+            perror("Error reading input");
+            break;
+        }
+
+        // 去除字符串末尾的换行符
+        if (bytesRead > 0 && input[bytesRead - 1] == '\n') {
+            input[bytesRead - 1] = '\0';
+            bytesRead--;
+        }
+
+        // 将输入的十六进制数据转换并打印
+        if (strcasecmp(input, "Q") == 0) {
+            // 如果输入是 'Q'，退出循环
+            break;
+        } else {
+            char *token = strtok(input, " ");
+            while (token != NULL) {
+                unsigned int hexValue;
+                if (sscanf(token, "%x", &hexValue) == 1) {
+                    printf("Hex Value: 0x%02X\n", hexValue);
+                    if(hexValue == 0x5D)
+                    {
+                        //给所有给客户端都发送
+                        // send_to_all_client("test+3");
+                        send_to_file();
+                    }
+                } else {
+                    printf("Invalid input: %s\n", token);
+                }
+                token = strtok(NULL, " ");
+            }
+        }
+    }
+
+
+    // 释放内存
+    free(input);
+    
+}
+
+void create_console()
+{
+    //创建控制台读取线程
+    pthread_t console_thread;
+    pthread_create(&console_thread, NULL, consoleReadThread, NULL);
+
+}
 
 
 int main()
@@ -177,7 +294,11 @@ int main()
     if (epoll_ctl(epollInstance, EPOLL_CTL_ADD, server, &event) == -1) 
     {
         printf("Failed to add server socket to epoll instance");
-    }        
+    }      
+
+
+    create_console();
+
 
     while( 1 )
     {        
@@ -223,6 +344,9 @@ int main()
                      for (int j = 0; j < num_clients; j++) {
                         if (clients[j].fd == events[i].data.fd) {
                             clients[j].fd = -1; // 标记为断开
+                            num_clients--;
+                            
+                            printf("client num_clients--:%d\n", num_clients);
                             break;
                         }
                     }
@@ -232,9 +356,6 @@ int main()
                     printf("(%d)========recv : %s\n", len, buf);
                     
                     send(events[i].data.fd, buf, len, 0);
-                    //创建线程
-                    pthread_t thread;
-                    pthread_create(&thread, NULL, thread_task, &events[i].data.fd);
 
                 }
             }
