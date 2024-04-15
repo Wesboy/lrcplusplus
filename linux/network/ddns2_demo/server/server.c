@@ -12,6 +12,7 @@
 
 #include <time.h>
 #include <pthread.h>
+#include "thpool.h"
 
 #define MAX_EVENTS  1024 //最多可以等待多少个事件
 #define SERVER_PORT 8887
@@ -56,6 +57,19 @@ long long printTime()
     // printf("Current timestamp in milliseconds: %lld\n", timestamp);
     return timestamp;
 }
+
+static threadpool thpool;
+
+void add_threadTask(void (*fun)(void *), void* arg)
+{
+    if(fun == NULL && thpool == NULL){
+	    printf("add task failed threadpool");
+        return;
+    }
+    thpool_add_work(thpool, fun, arg);
+}
+
+
 
 
 void send_file_to_client(int client_fd, const char *filename) ;
@@ -107,7 +121,12 @@ void *thread_task(void *arg) {
     // getcurrenttime(currentTime, sizeof(currentTime));
     // printf("thread_task time: %s.%d\n", currentTime, curTime);
     // send_file_to_client(curId, "test/00_small_1.jpg");
+    //根据编号发送文件
+    char filename[] = "test/big_bmp_001.bmp";
+    sprintf(filename, "test/big_bmp_%03d.bmp", curId);
+    printf("send file:%s to client:%d\n", filename, curId);
     send_file_to_client(curId, "test/big_bmp_1.bmp");
+    // send_file_to_client(curId, filename);
     endTime = printTime();
     // getcurrenttime(currentTime, sizeof(currentTime));
     printf("client:%d thread_task startTime:%ld end:%ld cast: %ldms\n", curId,curTime, endTime, endTime - curTime);
@@ -149,9 +168,7 @@ int send_to_all_client(const char *message) {
 // 向特定客户端发送消息的函数
 int send_to_file() {
     for (int i = 0; i < num_clients; i++) {
-        //创建thread_task线程
-        pthread_t thread_id;
-        pthread_create(&thread_id, NULL, thread_task, &clients[i].fd);
+        add_threadTask(thread_task, &clients[i].fd);
     }
     return 0; // 未找到客户端
 }
@@ -247,6 +264,7 @@ int main()
     int ret = 0;
     int i = 0;
 
+	thpool = thpool_init(100);
     
     signal(SIGINT, signal_handler);
 
